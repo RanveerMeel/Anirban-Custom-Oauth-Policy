@@ -5,7 +5,9 @@ It contains the Custom Oauth policy works extremely well with Mule external Oaut
 
 ![94a0a117494a8e9f1332f1b6e54f61d8](https://user-images.githubusercontent.com/1582548/30781889-3b15342e-a145-11e7-99a6-f574388789e4.jpeg)
 
-# Steps of installation
+## Steps of installation
 
-If we click the custom policies link of API Manager, we will able to upload the policies:
+* If we click the custom policies link of API Manager, we will able to upload the policies:
 ![1](https://user-images.githubusercontent.com/1582548/37570420-8e6e71a8-2b15-11e8-8864-acb2b4f76bb7.png)
+
+
