@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<policy xmlns="http://www.mulesoft.org/schema/mule/policy"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:spring="http://www.springframework.org/schema/beans"
+        xmlns:mule="http://www.mulesoft.org/schema/mule/core"
+        xmlns:mule-ss="http://www.mulesoft.org/schema/mule/spring-security"
+        xmlns:ss="http://www.springframework.org/schema/security"
+        xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+        xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
+        xsi:schemaLocation="http://www.mulesoft.org/schema/mule/policy http://www.mulesoft.org/schema/mule/policy/current/mule-policy.xsd
+              http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+              http://www.mulesoft.org/schema/mule/spring-security http://www.mulesoft.org/schema/mule/spring-security/current/mule-spring-security.xsd
+              http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-current.xsd
+              http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+              http://www.mulesoft.org/schema/mule/api-platform-gw http://www.mulesoft.org/schema/mule/api-platform-gw/current/mule-api-platform-gw.xsd
+              http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd" id="{{policyId}}" policyName="Anirban-Oauth-Policy">
+   
+  <!--   <pointcut>
+          <api-platform-gw:api-pointcut apiName="{{ apiName }}" apiVersion="{{ apiVersionName }}"/>
+    </pointcut> -->
+  
+  <!-- Author: Anirban Sen Chowdhary -->                       
+          
+    <before>
+        <mule:set-variable variableName="validationUrl" value="{{ validationUrl }}" />
+        <mule:set-variable variableName="clientId" value="{{ clientId }}" />
+        <mule:logger message="url: #[flowVars.validationUrl] Policy {{ policyId }}" level="INFO"/> 
+        
+       
+    
+        <mule:set-variable variableName="flag" value="#['{{ clientId }}'!='']" />
+        
+        <mule:set-variable variableName="scope" value="{{ scope }}" />
+        <mule:set-variable variableName="scopeflag" value="#['{{ scope }}'!='']" />
+        
+        <mule:logger message="clientId #[flowVars.clientId] scope #[flowVars.scope]" level="INFO"/> 
+                       
+         <scripting:component>
+          <scripting:script engine="groovy"><![CDATA[
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.http.HttpResponse;
+import org.apache.http.ParseException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.codehaus.jettison.json.JSONArray;
+import org.json.JSONObject;
+import org.mule.DefaultMuleMessage;
+import org.mule.api.MuleContext;
+import org.mule.api.MuleEventContext;
+import org.mule.api.MuleMessage;
+import org.mule.api.lifecycle.Callable;
+import org.mule.api.transport.PropertyScope;
+
+
+public class CallOauth implements Callable {
+
+MuleContext mContext;	
+	
+private static final Logger log = LogManager.getLogger(CallOauth.class);	
+@Override
+public Object onCall(MuleEventContext eventContext) throws Exception {
+    
+	mContext=eventContext.getMuleContext();
+	MuleMessage message = eventContext.getMessage();
+    return onCall(message,mContext);
+}
+
+public Object onCall(MuleMessage message,MuleContext mContext) throws Exception {
+	
+	boolean isValid=callOauthService(message);
+	return message;
+	
+}
+
+//Call HTTP service
+public boolean callOauthService(MuleMessage message)
+{
+	boolean isValid=false;  
+	try {
+		String error=null;
+		String error_desc=null;
+		String access_token=message.getProperty("access_token", PropertyScope.INBOUND);
+		String Authorization=message.getProperty("Authorization", PropertyScope.INBOUND);
+		Map<String, String> queryParams = message.getProperty("http.query.params", PropertyScope.INBOUND);
+	    String token=queryParams.get("access_token");
+		
+		String validationUrl=message.getProperty("validationUrl", PropertyScope.INVOCATION);
+		
+		  HttpClient httpclient = HttpClientBuilder.create().build();  
+          HttpGet httpGet = new HttpGet(validationUrl);  
+          int responseCode;
+       
+       //Check the conditions of access_token  
+          if(access_token!=null && Authorization==null && token==null){
+          httpGet.addHeader("Authorization", "Bearer "+access_token); 
+           }
+          else if (access_token==null && Authorization!=null && token==null){
+        	   if(Authorization.contains("Bearer "))
+        	 {
+        		 httpGet.addHeader("Authorization", Authorization); 
+      		
+        	 }
+        	 else
+        	 {
+         		 String getTokenAfterBasic=Authorization.substring(Authorization.lastIndexOf(" ") + 1);
+         		 responseCode= 400; 
+            	 error="Invalid access token: "+ getTokenAfterBasic+" (org.mule.modules.oauth2.provider.token.InvalidAccessTokenException).";
+             	 error_desc="The access token provided is expired, revoked, malformed, or invalid. Check if the Authorization header contains the token of Bearer type";
+             	 isValid=false;  
+           	     message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
+              	 message.setProperty("error", error, PropertyScope.INVOCATION);
+              	 message.setProperty("error_desc",error_desc, PropertyScope.INVOCATION);
+                 message.setProperty("status_code", responseCode, PropertyScope.INVOCATION);
+        	 } 
+           } 
+          else if (access_token!=null && Authorization!=null && token==null){
+        	  responseCode= 400; 
+        	  error="Either provide an 'access_token' query parameter or an 'Authorization' header.";
+          	  error_desc="The access token has been provided both, as a query param, and as an Authorization header.";
+          	  isValid=false;  
+        	  message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
+           	  message.setProperty("error", error, PropertyScope.INVOCATION);
+           	  message.setProperty("error_desc",error_desc, PropertyScope.INVOCATION);
+           	  message.setProperty("status_code", responseCode, PropertyScope.INVOCATION);
+                } 
+          else if (access_token!=null && Authorization!=null && token!=null){
+        	  responseCode= 400; 
+        	  error="Either provide an 'access_token' query parameter or an 'Authorization' header.";
+        	  error_desc="The access token has been provided both, as a query param, and as an Authorization header.";
+          	  isValid=false;  
+        	  message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
+           	  message.setProperty("error", error, PropertyScope.INVOCATION);
+           	  message.setProperty("error_desc",error_desc, PropertyScope.INVOCATION);
+              message.setProperty("status_code", responseCode, PropertyScope.INVOCATION);
+                } 
+          else if (access_token==null && Authorization==null && token==null){
+        	  responseCode= 400; 
+        	  error="Bad request. No token was provided";
+        	  error_desc="The required parameter access_token is missing.";
+          	  isValid=false;  
+        	  message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
+         	  message.setProperty("error", error, PropertyScope.INVOCATION);
+         	  message.setProperty("error_desc", error_desc, PropertyScope.INVOCATION);
+         	  message.setProperty("status_code", responseCode, PropertyScope.INVOCATION);
+                } 
+         else if (access_token==null && Authorization==null && token!=null){
+        	 httpGet.addHeader("Authorization", "Bearer "+token); 
+               }  
+         else if (access_token!=null && Authorization==null && token!=null){
+        	 httpGet.addHeader("Authorization", "Bearer "+access_token); 
+              }  
+         else if (access_token==null && Authorization!=null && token!=null){
+        	  if(Authorization.contains("Bearer "))
+        	 {
+        		 httpGet.addHeader("Authorization", Authorization); 
+      		
+        	 }
+        	 else
+        	 {
+         		 String getTokenAfterBasic=Authorization.substring(Authorization.lastIndexOf(" ") + 1);
+         		 responseCode= 400; 
+            	 error="Invalid access token: "+ getTokenAfterBasic+" (org.mule.modules.oauth2.provider.token.InvalidAccessTokenException).";
+            	 error_desc="The access token provided is expired, revoked, malformed, or invalid. Check if the Authorization header contains the token of Bearer type";
+             	 isValid=false;  
+           	     message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
+           	     message.setProperty("error_desc",error_desc, PropertyScope.INVOCATION);
+              	 message.setProperty("error", error, PropertyScope.INVOCATION);
+                 message.setProperty("status_code", responseCode, PropertyScope.INVOCATION);
+        	 } 
+              }   
+          
+          //Call validate service
+          HttpResponse response = httpclient.execute(httpGet); 
+          responseCode = response.getStatusLine().getStatusCode();  
+          log.info("responseCode "+responseCode);
+          log.info("response "+response.toString());
+    
+          if(responseCode== 200)
+          {
+        	  String stringResponse = EntityUtils.toString(response.getEntity());
+              log.info(stringResponse);
+             
+              JSONObject obj = new JSONObject(stringResponse);
+              String client_id= obj.getString("client_id");
+              String username= obj.getString("username");
+              String scope= obj.getString("scope");
+              int expires_in= obj.getInt("expires_in");
+              message.setProperty("client_id", client_id, PropertyScope.OUTBOUND);
+			  message.setProperty("username", username, PropertyScope.OUTBOUND);
+              message.setProperty("scope", scope, PropertyScope.OUTBOUND);
+          
+              boolean flag=message.getProperty("flag", PropertyScope.INVOCATION);
+              log.info("flag value "+flag);
+            	
+              boolean scopeflag=message.getProperty("scopeflag", PropertyScope.INVOCATION);
+              log.info("scope flag value "+scopeflag);
+              
+                   
+            	//Check if client_id and scope is configured in policy or left blank
+            	if(flag!=false && scopeflag==false){
+            	log.info("Client restriction implemented && scope not implemented");	
+                String clientId=message.getProperty("clientId", PropertyScope.INVOCATION);
+            	 //******** only client_id present 
+            	 
+            	 //Get the client_id from policy settings and split based on the spaces
+            	 String[] splittedClientId = clientId.split("\\s+");
+		         List<String> clientIdList = new ArrayList<String>();
+		         for (int i = 0; i < splittedClientId.length; i++) {
+			      clientIdList.add(splittedClientId[i].trim());
+		         }
+            	 //Add the list of client_id
+            	 
+              	 //Check if the client_id registered with the policy atches with actual on the token
+            	 if(clientIdList.contains(client_id.trim()))
+            	 {
+            		 isValid=true;
+                     message.setProperty("isValid", isValid, PropertyScope.INVOCATION);
+                     message.setProperty("status_code", responseCode, PropertyScope.INVOCATION);
+            	 }
+            	 else
+            	 {
+            		 isValid=false;
+            	     message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
+               	     error="Invalid client or the client does not have the access to this API";
+               	     message.setProperty("error", error, PropertyScope.INVOCATION);
+               	     message.setProperty("error_desc", "Wrong client_id provided", PropertyScope.INVOCATION);
+               	     message.setProperty("status_code", 401, PropertyScope.INVOCATION);
+            	 }
+            	}
+            	else if(flag==false && scopeflag==false)
+            	{
+            		 log.info("Client restriction not implemented && scope not implemented");	
+            		 //******** only client_id and scope both are not present  
+            		 isValid=true;
+                     message.setProperty("isValid", isValid, PropertyScope.INVOCATION);
+                     message.setProperty("status_code", responseCode, PropertyScope.INVOCATION);
+            	}
+            	if(flag==false && scopeflag!=false){
+            		log.info("Client restriction not implemented && scope implemented");
+            		String scopeVar=message.getProperty("scope", PropertyScope.INVOCATION);
+               	 //******** only client_id not present and scope present 
+               	 
+               	 //Get the scope from policy settings and split based on the spaces
+               	 String[] splittedscopeVar = scopeVar.split("\\s+");
+   		         List<String> scopeList = new ArrayList<String>();
+   		         for (int i = 0; i < splittedscopeVar.length; i++) {
+   		        	scopeList.add(splittedscopeVar[i].trim());
+   		         }
+               	 //Add the list of scope
+               	 
+
+               	 if(scopeList.contains(scope.trim()))
+               	 {
+               		 isValid=true;
+                        message.setProperty("isValid", isValid, PropertyScope.INVOCATION);
+                        message.setProperty("status_code", responseCode, PropertyScope.INVOCATION);
+               	 }
+               	 else
+               	 {
+               		 isValid=false;
+               	     message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
+                  	     error="Invalid scope or the scope is not authorized to access the API";
+                  	     error_desc="Wrong scope provided. The scope is not registered and authorized to access the API.";
+                  	     message.setProperty("error", error, PropertyScope.INVOCATION);
+                  	     message.setProperty("status_code", 401, PropertyScope.INVOCATION);
+                  	     message.setProperty("error_desc",error_desc, PropertyScope.INVOCATION);
+               	 }
+            		
+            	}
+            	if(flag!=false && scopeflag!=false){
+            		log.info("Client restriction implemented && scope implemented");
+            		String scopeVar=message.getProperty("scope", PropertyScope.INVOCATION);
+               	 //******** Both are present 
+               	 
+               	 //Get the scope from policy settings and split based on the spaces
+               	 String[] splittedscopeVar = scopeVar.split("\\s+");
+   		         List<String> scopeList = new ArrayList<String>();
+   		         for (int i = 0; i < splittedscopeVar.length; i++) {
+   		        	scopeList.add(splittedscopeVar[i].trim());
+   		         }
+               	 //Add the list of scope
+               	 
+                 String clientId=message.getProperty("clientId", PropertyScope.INVOCATION);
+            	 
+             	 //Get the client_id from policy settings and split based on the spaces
+             	 String[] splittedClientId = clientId.split("\\s+");
+ 		         List<String> clientIdList = new ArrayList<String>();
+ 		         for (int i = 0; i < splittedClientId.length; i++) {
+ 			      clientIdList.add(splittedClientId[i].trim());
+ 		         }  		         
+   		         
+   		         
+               	 if(scopeList.contains(scope.trim()) && clientIdList.contains(client_id.trim()))
+               	 {
+               	 //******** both are valid
+               		 isValid=true;
+                        message.setProperty("isValid", isValid, PropertyScope.INVOCATION);
+                        message.setProperty("status_code", responseCode, PropertyScope.INVOCATION);
+               	 }
+               	 else if(!(scopeList.contains(scope.trim())) && clientIdList.contains(client_id.trim()))
+               	 {
+               		//******** only client_id valid 
+               		 isValid=false;
+               	     message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
+                  	     error="Invalid scope or the scope is not authorized to access the API";
+                  	     error_desc="Wrong scope provided. The scope is not registered and authorized to access the API.";
+                  	     message.setProperty("error_desc",error_desc, PropertyScope.INVOCATION);
+                  	     message.setProperty("error", error, PropertyScope.INVOCATION);
+                  	     message.setProperty("status_code", 401, PropertyScope.INVOCATION);
+               	 }
+               	 else if(scopeList.contains(scope.trim()) && !(clientIdList.contains(client_id.trim())))
+               	 {
+               		 //******** only scope valid
+               		 isValid=false;
+               	     message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
+               	         error="Invalid client or the client does not have the access to this API";
+               	         error_desc="Wrong client_id provided";
+                  	     message.setProperty("error", error, PropertyScope.INVOCATION);
+                  	     message.setProperty("status_code", 401, PropertyScope.INVOCATION);
+                  	     message.setProperty("error_desc",error_desc , PropertyScope.INVOCATION);
+               	 }
+               	else if(!(scopeList.contains(scope.trim())) && !(clientIdList.contains(client_id.trim())))
+              	 {
+              		 //Both are not valid
+              		 isValid=false;
+              	     message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
+              	         error="Invalid client and Invalid scope";
+              	         error_desc="The client_id and scope provided are not registered and authorized to access the API.";
+                 	     message.setProperty("error", error, PropertyScope.INVOCATION);
+                 	     message.setProperty("error_desc",error_desc, PropertyScope.INVOCATION);
+                 	     message.setProperty("status_code", 401, PropertyScope.INVOCATION);
+              	 }	
+            	}
+            	
+        	
+            	
+          }
+          
+          else if(responseCode== 500)
+          {
+        	  String stringResponse = EntityUtils.toString(response.getEntity());
+              log.info(stringResponse);
+        	  isValid=false;  
+        	  message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
+        	  error=stringResponse;
+        	  message.setProperty("error", error, PropertyScope.INVOCATION);
+        	  message.setProperty("status_code", responseCode, PropertyScope.INVOCATION);
+        	  message.setProperty("error_desc", "The access token provided is expired, revoked, malformed, or invalid.", PropertyScope.INVOCATION);
+          }
+          else if(responseCode== 401)
+          {
+        	  String stringResponse = EntityUtils.toString(response.getEntity());
+              log.info(stringResponse);
+        	  isValid=false;  
+        	  message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
+        	  error=stringResponse;
+        	  message.setProperty("error", error, PropertyScope.INVOCATION);
+        	  message.setProperty("status_code", responseCode, PropertyScope.INVOCATION);
+        	  message.setProperty("error_desc", "The access token provided is expired, revoked, malformed, or invalid.", PropertyScope.INVOCATION);
+          }
+          else if(responseCode== 403)
+          {
+        	  String stringResponse = EntityUtils.toString(response.getEntity());
+              log.info(stringResponse);
+        	  isValid=false;  
+        	  error=stringResponse;
+        	  message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
+        	  message.setProperty("status_code", responseCode, PropertyScope.INVOCATION);
+        	  message.setProperty("error_desc", "The access token provided is expired, revoked, malformed, or invalid.", PropertyScope.INVOCATION);
+          }
+          else if(responseCode== 400)
+          {
+        	  String stringResponse = EntityUtils.toString(response.getEntity());
+              log.info(stringResponse);
+        	  isValid=false;  
+        	  message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
+        	  message.setProperty("error", error, PropertyScope.INVOCATION);
+         	  message.setProperty("error_desc", error_desc, PropertyScope.INVOCATION);
+         	  message.setProperty("status_code", responseCode, PropertyScope.INVOCATION);
+          }
+      } catch (IOException  | ParseException ex) {
+    	  ex.printStackTrace();
+      }
+	return isValid;
+  }
+}
+
+ new CallOauth().onCall(message,muleContext);
+              ]]>
+          </scripting:script>
+      </scripting:component>
+        
+      <mule:logger message="Hit actual API: #[isValid]" level="INFO"/>  
+        
+        <mule:message-filter onUnaccepted="policyViolation">
+            <mule:expression-filter expression="#[flowVars.isValid == true]" />
+        </mule:message-filter>  
+        <mule:remove-variable variableName="access_token" />
+        <mule:remove-variable variableName="clientId" />
+        <mule:remove-variable variableName="scope" />
+    </before>
+
+    <!--
+        The after is inserted after your API flows. With this tag you can
+        manipulate the API response.
+
+        Note that if the API flow is halted (ie. by a filter) the after
+        tag will not run. In this example, the after tag is not executed
+        when the message is filtered.
+    -->
+    <after>
+        <mule:set-property propertyName="Custom-Header" value="Example Policy" />
+        
+    </after>
+
+    <mule:processor-chain name="policyViolation">
+        <mule:logger message="The custom policy filtered the message " level="DEBUG" />
+        <mule:set-property propertyName="http.status" value="#[flowVars.status_code]"/>
+        <mule:set-property propertyName="Content-Type" value="application/json"/>
+        <mule:set-payload value='{ "error" : "#[flowVars.error.toString()]","error description" : "#[flowVars.error_desc.toString()]"}'/>
+    </mule:processor-chain>
+    
+    <!-- Pointcuts specify methods (GET/POST) where this policy takes effect-->
+    {{#pointcutData.length}}
+      {{#pointcutData}}
+        <pointcut>
+          <api-platform-gw:api-pointcut apiName="{{apiName}}" apiVersion="{{apiVersionName}}"/>
+          <resource methodRegex="{{methodRegex}}" uriTemplateRegex="{{uriTemplateRegex}}"/>
+        </pointcut>
+      {{/pointcutData}}
+    {{/pointcutData.length}}
+    {{^pointcutData.length}}
+      <pointcut>
+          <api-platform-gw:api-pointcut apiName="{{ apiName }}" apiVersion="{{ apiVersionName }}"/>
+      </pointcut>
+    {{/pointcutData.length}}
+    
+  
+    
+</policy>
