@@ -1,4 +1,3 @@
-#
 # This is an example of a Custom Policy Definition file.This policy is created by Anirban Sen Chowdhary
 # This policy works with Mule oauth provider (https://docs.mulesoft.com/mule-user-guide/v/3.9/mule-secure-token-service) or custom Mule oauth provider
 # This Custom Policy overcomes many limitations of Mule external oauth policy. This Custom Policy mainly helps in:
@@ -7,6 +6,9 @@
 # - It has an added advantage of restricting particular Client or Client list as well as a particular Scope or list of Scopes.
 # To know more about the auther please visit : http://anirbansenchowdhary.com/
 # See: https://docs.mulesoft.com/api-manager/applying-custom-policies#policy-definition 
+
+# Author: Anirban Sen Chowdhary. 
+#Incase of any issue, please report it here : https://github.com/anirban37/Anirban-Custom-Oauth-Policy/issues
 
 # Name used to describe the policy in API Platform
 name: Anirban Custom Oauth Policy Example

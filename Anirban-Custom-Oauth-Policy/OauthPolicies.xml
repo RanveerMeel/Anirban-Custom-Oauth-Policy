@@ -19,7 +19,7 @@
           <api-platform-gw:api-pointcut apiName="{{ apiName }}" apiVersion="{{ apiVersionName }}"/>
     </pointcut> -->
   
-  <!-- Author: Anirban Sen Chowdhary -->                       
+  <!-- Author: Anirban Sen Chowdhary. Incase of any issue, please report it here : https://github.com/anirban37/Anirban-Custom-Oauth-Policy/issues -->                       
           
     <before>
         <mule:set-variable variableName="validationUrl" value="{{ validationUrl }}" />
