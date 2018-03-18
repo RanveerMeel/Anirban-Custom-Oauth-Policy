@@ -13,8 +13,8 @@ It contains the Custom Oauth policy works extremely well with Mule external Oaut
 
 * Once the Add Custom Policy dialogue box appears, we will be able to upload the XML and the YAML files to install the Custom Policy on our platform:
 
-![2](https://user-images.githubusercontent.com/1582548/37570448-f466b538-2b15-11e8-8c74-01509f819669.png)
+![21](https://user-images.githubusercontent.com/1582548/37570528-dcf75ce4-2b16-11e8-826b-e6a3fb6932de.png)
 
 * After we upload both the files, we can see the custom policy is installed and is ready to use!:
 
-![3](https://user-images.githubusercontent.com/1582548/37570468-33739d86-2b16-11e8-88dc-77188ac3ecfd.png)
+![22](https://user-images.githubusercontent.com/1582548/37570521-bff7d83a-2b16-11e8-870d-1e3c9cec2a8a.png)
