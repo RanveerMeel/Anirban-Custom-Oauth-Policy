@@ -1,5 +1,5 @@
 [![Build Status](https://semaphoreapp.com/api/v1/projects/d4cca506-99be-44d2-b19e-176f36ec8cf1/128505/shields_badge.svg)](https://semaphoreapp.com/boennemann/badges)
-[![](https://images.microbadger.com/badges/version/anir37/anirban-mule.svg)](https://microbadger.com/images/anir37/anirban-mule "Get your own version badge on microbadger.com")
+[![](https://images.microbadger.com/badges/image/anir37/anirban-mule.svg)](https://microbadger.com/images/anir37/anirban-mule "Get your own image badge on microbadger.com")   [![](https://images.microbadger.com/badges/version/anir37/anirban-mule.svg)](https://microbadger.com/images/anir37/anirban-mule "Get your own version badge on microbadger.com")
 # Anirban-Custom-Oauth-Policy
 It contains the Custom Oauth policy works extremely well with Mule external Oauth provider or with any Mule custom Oauth provider
 
