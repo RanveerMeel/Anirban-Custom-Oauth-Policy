@@ -18,3 +18,10 @@ It contains the Custom Oauth policy works extremely well with Mule external Oaut
 * After we upload both the files, we can see the custom policy is installed and is ready to use!:
 
 ![22](https://user-images.githubusercontent.com/1582548/37570521-bff7d83a-2b16-11e8-870d-1e3c9cec2a8a.png)
+
+
+## Configuring the policy with an existing API:
+
+Once the policy is installed and ready, we can configure it and protect any number of APIs with OAuth system. When we select an API to apply the policy, we can see the Custom policy is visible on the list to select:
+
+![5](https://user-images.githubusercontent.com/1582548/37570543-1e8c3d5a-2b17-11e8-8880-016e03275498.png)
