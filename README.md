@@ -25,3 +25,11 @@ It contains the Custom Oauth policy works extremely well with Mule external Oaut
 Once the policy is installed and ready, we can configure it and protect any number of APIs with OAuth system. When we select an API to apply the policy, we can see the Custom policy is visible on the list to select:
 
 ![5](https://user-images.githubusercontent.com/1582548/37570543-1e8c3d5a-2b17-11e8-8880-016e03275498.png)
+
+Once applied, the policy will be ready to be configured as per our need:
+
+![dd](https://user-images.githubusercontent.com/1582548/37570556-5213a76c-2b17-11e8-8bd9-0c8355642726.png)
+
+The first field is the validation URL, which is a mandatory field, where we need to put the validation URL of our Mule external OAuth provider.
+
+The second field is the list of Client ID separated by spaces, which we want to allow to access the API. This is an optional field and if nothing is mentioned or left blank, then it will allow all the Client ID registered with the API to access it. This is an optional but yet powerful additional layer of security where we can allow any particular or a list of Clients to access the API even though they have registered for API access in that group.
