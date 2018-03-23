@@ -34,7 +34,7 @@ The first field is the validation URL, which is a mandatory field, where we need
 
 The second field is the list of Client ID separated by spaces, which we want to allow to access the API. This is an optional field and if nothing is mentioned or left blank, then it will allow all the Client ID registered with the API to access it. This is an optional but yet powerful additional layer of security where we can allow any particular or a list of Clients to access the API even though they have registered for API access in that group.
 
-## An important point to note:
-to execute this custom policy with Mule's external OAuth provider flawlessly, the validation flow component of the provider, on the other hand, should be configured to throw the exception as follows:
+**An important point to note:**
+To execute this **custom policy** with Mule's external OAuth provider flawlessly, the validation flow component of the provider, on the other hand, should be configured to throw the exception as follows:
 
 `<oauth2-provider:validate throwExceptionOnUnaccepted="true"/>`
