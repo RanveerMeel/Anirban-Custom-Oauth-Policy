@@ -38,3 +38,5 @@ The second field is the list of Client ID separated by spaces, which we want to 
 To execute this **custom policy** with Mule's external OAuth provider flawlessly, the validation flow component of the provider, on the other hand, should be configured to throw the exception as follows:
 
 `<oauth2-provider:validate throwExceptionOnUnaccepted="true"/>`
+
+The Client ID, Scope, and Username will be available to the backend API application as an inbound property as **client_id**, **username**, and **scope** respectively
