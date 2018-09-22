@@ -44,17 +44,16 @@ configuration:
     
   - propertyName: clientId
     name: Client ID Value
-    description: Client ID that has the API requests access separated by comma. example 0fa315a35f6b46cf824ad94c280fbf48 0fd94c280fbf48 
+    description: Client ID that has the API requests access separated by space. example 0fa315a35f6b46cf824ad94c280fbf48 0fd94c280fbf48 
     type: string
     optional: true
     allowMultiple: true
     
   - propertyName: scope
     name: Scope
-    description: Scope separated by comma. example READ_PROFILE READ_BOOKSHELF 
+    description: Scope separated by space. example READ_PROFILE READ_BOOKSHELF 
     type: string
     optional: true
     allowMultiple: true 
-  
   
   

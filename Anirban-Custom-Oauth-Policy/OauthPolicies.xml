@@ -255,9 +255,27 @@ public boolean callOauthService(MuleMessage message)
    		        	scopeList.add(splittedscopeVar[i].trim());
    		         }
                	 //Add the list of scope
-               	 
+               
+               	  log.info(scopeList.toString());
+         
+        
+         
+           //////////////////////////////////////////////////////////////////////////////
+               	  
+               	 String[] splittedscope = scope.split("\\s+");
+	         List<String> scList = new ArrayList<String>();
+	        
+	         for (int i = 0; i < splittedscope.length; i++) {
+	        	 scList.add(splittedscope[i].trim());
+	         }       
+               	  
+              scopeList.removeAll(scList); 	  
+               	  
 
-               	 if(scopeList.contains(scope.trim()))
+        ///////////////////////////////////////////////////////////////////////
+
+
+               	 if(scopeList.isEmpty())
                	 {
                		 isValid=true;
                         message.setProperty("isValid", isValid, PropertyScope.INVOCATION);
@@ -268,7 +286,7 @@ public boolean callOauthService(MuleMessage message)
                		 isValid=false;
                	     message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
                   	     error="Invalid scope or the scope is not authorized to access the API";
-                  	     error_desc="Wrong scope provided. The scope is not registered and authorized to access the API.";
+                  	     error_desc = "The scope is not registered and authorized to access the API. Wrong scope provided: " + scList.toString()+ " Missing: "+ scopeList.toString();
                   	     message.setProperty("error", error, PropertyScope.INVOCATION);
                   	     message.setProperty("status_code", 401, PropertyScope.INVOCATION);
                   	     message.setProperty("error_desc",error_desc, PropertyScope.INVOCATION);
@@ -287,7 +305,20 @@ public boolean callOauthService(MuleMessage message)
    		        	scopeList.add(splittedscopeVar[i].trim());
    		         }
                	 //Add the list of scope
-               	 
+  
+  
+         ///////////////////////////////////
+          String[] splittedscope = scope.split("\\s+");
+	         List<String> scList = new ArrayList<String>();
+	        
+	         for (int i = 0; i < splittedscope.length; i++) {
+	        	 scList.add(splittedscope[i].trim());
+	         }      
+  
+  
+             scopeList.removeAll(scList);
+            ////////////////////////////////////////  
+                      	 
                  String clientId=message.getProperty("clientId", PropertyScope.INVOCATION);
             	 
              	 //Get the client_id from policy settings and split based on the spaces
@@ -298,25 +329,25 @@ public boolean callOauthService(MuleMessage message)
  		         }  		         
    		         
    		         
-               	 if(scopeList.contains(scope.trim()) && clientIdList.contains(client_id.trim()))
+               	 if(scopeList.isEmpty() && clientIdList.contains(client_id.trim()))
                	 {
                	 //******** both are valid
                		 isValid=true;
                         message.setProperty("isValid", isValid, PropertyScope.INVOCATION);
                         message.setProperty("status_code", responseCode, PropertyScope.INVOCATION);
                	 }
-               	 else if(!(scopeList.contains(scope.trim())) && clientIdList.contains(client_id.trim()))
+               	 else if(!(scopeList.isEmpty()) && clientIdList.contains(client_id.trim()))
                	 {
                		//******** only client_id valid 
                		 isValid=false;
                	     message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
                   	     error="Invalid scope or the scope is not authorized to access the API";
-                  	     error_desc="Wrong scope provided. The scope is not registered and authorized to access the API.";
+                  	     error_desc = "The scope is not registered and authorized to access the API. Wrong scope provided: " + scList.toString()+ " Missing: "+ scopeList.toString();
                   	     message.setProperty("error_desc",error_desc, PropertyScope.INVOCATION);
                   	     message.setProperty("error", error, PropertyScope.INVOCATION);
                   	     message.setProperty("status_code", 401, PropertyScope.INVOCATION);
                	 }
-               	 else if(scopeList.contains(scope.trim()) && !(clientIdList.contains(client_id.trim())))
+               	 else if(scopeList.isEmpty() && !(clientIdList.contains(client_id.trim())))
                	 {
                		 //******** only scope valid
                		 isValid=false;
@@ -327,13 +358,13 @@ public boolean callOauthService(MuleMessage message)
                   	     message.setProperty("status_code", 401, PropertyScope.INVOCATION);
                   	     message.setProperty("error_desc",error_desc , PropertyScope.INVOCATION);
                	 }
-               	else if(!(scopeList.contains(scope.trim())) && !(clientIdList.contains(client_id.trim())))
+               	else if(!(scopeList.isEmpty()) && !(clientIdList.contains(client_id.trim())))
               	 {
               		 //Both are not valid
               		 isValid=false;
               	     message.setProperty("isValid", isValid, PropertyScope.INVOCATION); 
               	         error="Invalid client and Invalid scope";
-              	         error_desc="The client_id and scope provided are not registered and authorized to access the API.";
+              	         error_desc = "The client_id and scope provided are not registered and authorized to access the API. Wrong scope provided: "+scList.toString()+ " Missing: "+ scopeList.toString();
                  	     message.setProperty("error", error, PropertyScope.INVOCATION);
                  	     message.setProperty("error_desc",error_desc, PropertyScope.INVOCATION);
                  	     message.setProperty("status_code", 401, PropertyScope.INVOCATION);
@@ -411,7 +442,6 @@ public boolean callOauthService(MuleMessage message)
     <!--
         The after is inserted after your API flows. With this tag you can
         manipulate the API response.
-
         Note that if the API flow is halted (ie. by a filter) the after
         tag will not run. In this example, the after tag is not executed
         when the message is filtered.
