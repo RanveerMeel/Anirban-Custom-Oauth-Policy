@@ -1,0 +1,164 @@
+#%RAML 1.0
+---
+#===============================================================
+#  Products API - RAML sample project
+#  References:
+#    - RAML Specification - http://raml.org/spec.html
+#    
+#===============================================================
+title: Products API
+version: v0.1
+#baseUri: http://localhost:8082/test
+baseUri: http://mainapp.cloudhub.io/api
+#List of media type to support
+mediaType:  application/json
+#List of protocols to support for baseUri
+protocols: [ HTTP, HTTPS ]
+
+securitySchemes:
+    oauth_2_0:
+      description: |
+          Dropbox supports OAuth 2.0 for authenticating all API requests.
+      type: OAuth 2.0
+      describedBy:
+          headers:
+              Authorization:
+                  description: |
+                     Used to send a valid OAuth 2 access token. Do not use
+                     with the "access_token" query string parameter.
+                  type: string
+                  displayName: Authorization
+                  
+              access_token:
+                  description: |
+                     Used to send a valid OAuth 2 access token. Do not use
+                     with the "access_token" query string parameter.
+                  type: string                 
+                  displayName: access_token
+                  
+          queryParameters:
+              access_token:
+                  description: |
+                     Used to send a valid OAuth 2 access token. Do not use together with the "Authorization" header
+                  type: string
+                  displayName: access_token
+  
+                  
+          responses:
+              401:
+                  description: |
+                      Bad or expired token. This can happen if the user or Dropbox
+                      revoked or expired an access token. To fix, you should re-
+                      authenticate the user.
+              403:
+                  description: |
+                      Bad OAuth request (wrong consumer key, bad nonce, expired
+                      timestamp...). Unfortunately, re-authenticating the user won't help here.
+      settings:
+        authorizationUri: http://oauthapp.cloudhub.io/anirban/api/authorize
+        accessTokenUri: http://oauthapp.cloudhub.io/anirban/api/token
+        authorizationGrants: [authorization_code, password, client_credentials, implicit]
+        scopes: [READ_BOOKSHELF, WRITE_BOOKSHELF, analytics.manage.users.readonly, analytics.provision, analytics.readonly]
+
+
+/books: 
+         
+        displayName: Book
+        description: Description on Book
+        
+        get:
+       
+          description: Get book name
+          securedBy: [oauth_2_0]                    
+          queryParameters:
+
+           grant_type:
+            type: string
+            description: An author's full name
+            example: client_credentials
+            required: true
+            displayName: grant_type
+
+           author:
+            displayName: Author
+            type: string
+            description: An author's full name
+            example: Anirban
+            required: false
+          
+          responses: 
+                 200: 
+                      body:
+                       application/json:
+                         example: |
+                           {
+                             "id": "2AAS5600WW",
+                             "bookName": "Discovery of India",
+                             "price": 234
+                           }
+                     
+                 404: 
+                     description: |
+                         Unable to get with that author
+        post:  
+       
+          description: Get book name
+          securedBy: [oauth_2_0: { scopes: [ WRITE_BOOKSHELF  ] }]                    
+              
+          body:
+           application/json:
+            example: | 
+              { 
+                "inputParam" : "Input Message"
+               }                       
+               
+               
+          responses: 
+                 200: 
+                      body:
+                       application/json:
+                         example: |
+                           {
+                             "id": "Author id",
+                             "price": 234
+                           }
+                                    
+               
+                         
+/Author: 
+         
+        displayName: Author
+        description: Description on Book
+        
+        get:
+       
+          description: Get book name
+          securedBy: [oauth_2_0: { scopes: [ WRITE_BOOKSHELF, READ_BOOKSHELF  ] }]                     
+          queryParameters:
+
+          
+           authorName:
+            displayName: Author
+            type: string
+            description: An author's full name
+            example: Anirban
+            required: false
+          
+          responses: 
+                 200: 
+                      body:
+                       application/json:
+                         example: |
+                           {
+                             "id": "Author id",
+                             "Unsecured": "Unsecured",
+                             "price": 234
+                           }
+                     
+                 404: 
+                     description: |
+                         Unable to get with that author                         
+                         
+                         
+                         
+                         

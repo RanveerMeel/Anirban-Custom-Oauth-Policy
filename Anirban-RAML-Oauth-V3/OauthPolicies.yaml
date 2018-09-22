@@ -1,0 +1,67 @@
+# This is an example of a Custom Policy Definition file.This policy is created by Anirban Sen Chowdhary
+# This policy works with Mule oauth provider (https://docs.mulesoft.com/mule-user-guide/v/3.9/mule-secure-token-service) or custom Mule oauth provider
+# This Custom Policy overcomes many limitations of Mule external oauth policy. This Custom Policy mainly helps in:
+# - Access_Token can be passed to the API using all 3 ways: 1) Header 2) Query params 3) Authorization Header
+# - It overcomes the limitation of default Mule oauth policy which use caching and unable to restrict invalid tokens or the token which has been revoked.
+# - It has an added advantage of restricting particular Client or Client list as well as a particular Scope or list of Scopes.
+# - It can be used for applications having RAML as well as non RAML. For the application having RAML, scopes can be taken from RAML itself.
+# To know more about the auther please visit : http://anirbansenchowdhary.com/
+# See: https://docs.mulesoft.com/api-manager/applying-custom-policies#policy-definition 
+
+# Author: Anirban Sen Chowdhary. 
+#Incase of any issue, please report it here : https://github.com/anirban37/Anirban-Custom-Oauth-Policy/issues
+
+# Name used to describe the policy in API Platform
+name: Anirban Custom Oauth Policy Example
+id: Anirban-Oauth-RAML-Policy
+
+# A more detailed description of the policy
+description: Specifies *validationUrl* of Anirban Oauth 2.0 Access Token provider.
+
+# Category is just a plain text used in API Platform to list policies
+category: Security
+
+# True if the policy can work on its own or false if the policy can be 
+# applied only as part of another policy.
+standalone: true
+
+# A list of strings that describes characteristics provided by this policy.
+# API Platform uses an indirect dependency mechanisms: policies can provide
+# or require characteristics, the platform will inform you about requirements
+# but it will not force you to use a particular policy
+providedCharacteristics: [Oauth 2.0 protected]
+requiredCharacteristics: []
+requiresConnectivity: false
+resourceLevelSupported: true
+
+# This defines custom configuration parameters for your policy template
+configuration:  
+  - propertyName: validationUrl
+    name: OAUTH 2.0 Validation url
+    description: External Oauth 2.0 Validation url
+    type: string
+    optional: false
+    defaultValue: "http://oauthanir.us-e2.cloudhub.io/anirban/api/validate"
+    
+  - propertyName: clientId
+    name: Client ID Value
+    description: Client ID that has the API requests access separated by space. example 0fa315a35f6b46cf824ad94c280fbf48 0fd94c280fbf48 
+    type: string
+    optional: true
+    allowMultiple: true
+    
+  - propertyName: scope
+    name: Scope
+    description: Scope separated by space. example READ_PROFILE READ_BOOKSHELF 
+    type: string
+    optional: true
+    allowMultiple: true 
+    
+  - propertyName: allowNonRamlApplication
+    name: Allow NonRaml application
+    description: Allows a NonRaml application that has no RAML configuration to work with this policy. By default it will only allow RAML applications.
+    type: boolean
+    defaultValue: false 
+    optional: true    
+  
+  
