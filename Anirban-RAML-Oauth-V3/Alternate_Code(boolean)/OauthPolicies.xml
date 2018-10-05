@@ -514,7 +514,7 @@ public class RamlParser implements Callable {
 		boolean isValid;
 		List scopeListFromRaml;
 		if (scopeValueFormYaml != "") {
-			// Scope is present
+			// Scope is present in YAML
 			log.info("Scope is present in Config ");
 			message.setProperty("scopeflag", true, PropertyScope.INVOCATION);
 			String[] scopeValueFormYamlSplitted = scopeValueFormYaml.split("\\s+");
@@ -528,8 +528,8 @@ public class RamlParser implements Callable {
 			isValid = callAouthHttp(message, scopeListFromRaml);
 
 		} else {
-			// Scope not present
-			log.info("Scope is not present in RAML ");
+			// Scope not present in YAML
+			log.info("Scope is not present in YAML configuration input");
 			message.setProperty("scopeflag", false, PropertyScope.INVOCATION);
 			isValid = callAouthHttp(message, null);
 		}

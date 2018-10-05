@@ -26,7 +26,7 @@
         <mule:set-variable variableName="clientId" value="{{ clientId }}" />
         <mule:logger message="url: #[flowVars.validationUrl] Policy {{ policyId }}" level="INFO"/> 
         
-        <mule:set-variable variableName="allowNonRamlApplication" value="{{ allowNonRamlApplication }}" />
+        <mule:set-variable variableName="allowNonRamlApplication" value="#[new java.lang.Boolean({{ allowNonRamlApplication }})]" />
         <mule:logger message="allowNonRamlApplication value: #[flowVars.allowNonRamlApplication]" level="INFO"/> 
         <mule:set-variable variableName="flag" value="#['{{ clientId }}'!='']" />
         
@@ -408,8 +408,8 @@ public class RamlParser implements Callable {
 
 	public boolean callOauthService(MuleMessage message, MuleContext mContext) throws RegistrationException, Exception {
 		boolean isValid = false;
-		String allowNonRamlFlag="";
-    	allowNonRamlFlag=message.getProperty("allowNonRamlApplication", PropertyScope.INVOCATION).toString();
+		boolean allowNonRamlApplication=false;
+		allowNonRamlApplication=message.getProperty("allowNonRamlApplication", PropertyScope.INVOCATION);
 		HashMap scopeMap = new HashMap();
 		String[] reqUriList = ((String) message.getInboundProperty("http.request.path")).split("/");
 		String resourceName="";
@@ -457,7 +457,7 @@ public class RamlParser implements Callable {
 				//This works for a NonRAML flow inside a RAML based application
 				String error = "Resource is not protected by Oauth or RAML is not present";
 				String error_desc = "RAML configuration may not be present in Application. If present, then resource is not secured by '[securedBy]'";
-				isValid = allowNonRAMLApplicationWithThisPolicy(message, allowNonRamlFlag,error,error_desc);
+				isValid = allowNonRAMLApplicationWithThisPolicy(message, allowNonRamlApplication,error,error_desc);
     			return isValid;
 			} else {
 				
@@ -466,7 +466,7 @@ public class RamlParser implements Callable {
 				    //This works for pure NonRAML application				
 					String error = "RAML is not present and resource is not protected by Oauth";
 					String error_desc = "Cannot find RAML configuration in Application. May not be a RAML based application";
-					isValid = allowNonRAMLApplicationWithThisPolicy(message, allowNonRamlFlag,error,error_desc);
+					isValid = allowNonRAMLApplicationWithThisPolicy(message, allowNonRamlApplication,error,error_desc);
 			        return isValid;
 				}
 				else{
@@ -487,17 +487,18 @@ public class RamlParser implements Callable {
 		}
 		return isValid;
 	}
+
 	
-	private boolean allowNonRAMLApplicationWithThisPolicy(MuleMessage message, String allowNonRaml, String error, String error_desc) {
+	private boolean allowNonRAMLApplicationWithThisPolicy(MuleMessage message, boolean allowNonRamlApplication, String error, String error_desc) {
 		boolean isValid = false;
-		if(allowNonRaml == "true")	
+		if(allowNonRamlApplication ==true || allowNonRamlApplication)	
 		  {
 		     //If we want to stop the policy since it is not a RAML application and RAML is not present, we can go with following:
 			String scopeValueFormYaml = message.getProperty("scopeFromYamlConf", PropertyScope.INVOCATION);
 		   	isValid = isScopePresentInConfig(message, scopeValueFormYaml);
-		  	return isValid;			
+		   	return isValid;			
 		  }
-		else if(allowNonRaml == "false"){
+		else{
 		   	//Else if we still want to go with policy even if RAML not present, do the following:
 			isValid = false;
 		    message.setProperty("isValid", isValid, PropertyScope.INVOCATION);
@@ -506,14 +507,14 @@ public class RamlParser implements Callable {
 		    message.setProperty("error_desc", error_desc, PropertyScope.INVOCATION);
 		    return isValid;
 		   }
-		return isValid;
+		
 	}
-
-     private boolean isScopePresentInConfig(MuleMessage message, String scopeValueFormYaml) {
+	
+	private boolean isScopePresentInConfig(MuleMessage message, String scopeValueFormYaml) {
 		boolean isValid;
 		List scopeListFromRaml;
 		if (scopeValueFormYaml != "") {
-			// Scope is present
+			// Scope is present in YAML
 			log.info("Scope is present in Config ");
 			message.setProperty("scopeflag", true, PropertyScope.INVOCATION);
 			String[] scopeValueFormYamlSplitted = scopeValueFormYaml.split("\\s+");
@@ -527,8 +528,8 @@ public class RamlParser implements Callable {
 			isValid = callAouthHttp(message, scopeListFromRaml);
 
 		} else {
-			// Scope not present
-			log.info("Scope is not present in RAML ");
+			// Scope not present in YAML
+			log.info("Scope is not present in YAML configuration input");
 			message.setProperty("scopeflag", false, PropertyScope.INVOCATION);
 			isValid = callAouthHttp(message, null);
 		}
@@ -688,6 +689,7 @@ public class RamlParser implements Callable {
 		}
 
 		return scopeMap;
+
 	}
 
 	private boolean isResourceOauthProtected(String resourceVerb, MuleContext mContext, MuleMessage message)throws RegistrationException, NullPointerException, Exception {
@@ -702,6 +704,12 @@ public class RamlParser implements Callable {
 			log.info("Cannot find RAML configuration in Application ");
 			isValid = false;
 			exitValue=true;
+			/*message.setProperty("isValid", isValid, PropertyScope.INVOCATION);
+			String error = "Resource is not protected by Oauth";
+			String error_desc = "Cannot find RAML configuration in Application";
+			message.setProperty("error", error, PropertyScope.INVOCATION);
+			message.setProperty("status_code", 500, PropertyScope.INVOCATION);
+			message.setProperty("error_desc", error_desc, PropertyScope.INVOCATION);*/
 			return isResourceOauthProtected;
 		}
 
