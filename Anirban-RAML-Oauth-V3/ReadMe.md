@@ -1,5 +1,5 @@
 * This policy is helful with Mule Application that has RAML specification in it.
-* This policy can be used to protect each RAML resources with scopes defined in it. An exampke test.raml is provided here.
+* This policy can be used to protect each RAML resources with **scopes** defined in it. An exampke test.raml is provided here.
 * This policy also works with non-RAML applications.
 * Plenty of options given to the users to select if they want to work non-RAML applications. If they don't, they can simply un-check the option "Allow NonRaml application" and in that case, any non-RAML applications will not work with this policy. It will show error message that application doesn't have RAML specification. The message will be :- "Cannot find RAML configuration in Application".
 
